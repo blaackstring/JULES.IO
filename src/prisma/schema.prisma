@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String          @id @default(uuid())
+  name         String
+  email        String          @unique
+  password     String
+  isAdmin      Boolean         @default(false)
+  projects     ProjectMember[]
+  tasks        Task[]          @relation("AssignedTasks")
+  createdTasks Task[]          @relation("CreatedTasks")
+}
+
+model Project {
+  id          String          @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @default(now()) @updatedAt
+  members     ProjectMember[]
+  tasks       Task[]
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  role      String   @default("MEMBER") // ADMIN or MEMBER
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, projectId])
+}
+
+model Task {
+  id           String    @id @default(uuid())
+  title        String
+  description  String?
+  dueDate      DateTime?
+  priority     String    @default("Medium") // Low, Medium, High
+  status       String    @default("To Do") // To Do, In Progress, Done
+  project      Project   @relation(fields: [projectId], references: [id])
+  projectId    String
+  assignedTo   User?     @relation(fields: [assignedToId], references: [id], name: "AssignedTasks")
+  assignedToId String?
+  createdBy    User      @relation(fields: [createdById], references: [id], name: "CreatedTasks")
+  createdById  String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now()) @updatedAt
+  completedAt  DateTime?
+}
